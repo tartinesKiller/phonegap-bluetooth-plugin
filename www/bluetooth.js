@@ -370,9 +370,13 @@ Bluetooth.prototype.disconnect = function(onSuccess, onError)
  *
  * @see stopConnectionManager
  */
-Bluetooth.prototype.startConnectionManager = function(onDataRead, onError, encoding)
+Bluetooth.prototype.startConnectionManager = function(onSuccess, onError, encoding)
 {
-    exec(onDataRead, onError, "Bluetooth", "startConnectionManager", [encoding || "UTF-8"]);
+    exec(onSuccess, onError, "Bluetooth", "startConnectionManager", [encoding || "UTF-8"]);
+}
+
+Bluetooth.prototype.setDataCallback = function(handler) {
+    exec(handler, () => {}, "Bluetooth", "setDataCallback", []);
 }
 
 /**

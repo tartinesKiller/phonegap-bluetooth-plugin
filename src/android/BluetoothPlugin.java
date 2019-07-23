@@ -54,6 +54,7 @@ public class BluetoothPlugin extends CordovaPlugin
 
 	private	static final String ACTION_START_READING	= "startConnectionManager";
 	private	static final String ACTION_STOP_READING		= "stopConnectionManager";
+	private static final String ACTION_SET_DATA_CALLBACK= "setDataCallback";
 
 	private static final String ACTION_WRITE			= "write";
 
@@ -87,6 +88,11 @@ public class BluetoothPlugin extends CordovaPlugin
 	 * Callback context for the asynchronous (and continuous) read operation.
 	 */
 	private CallbackContext _ioCallback;
+
+	/**
+	 * Flag indicates if the connection manager is currently active
+	 */
+	private Boolean _connectionManagerActive = false;
 
 	/**
 	 * Is set to true when a discovery process is canceled or a new one is started when
@@ -193,6 +199,11 @@ public class BluetoothPlugin extends CordovaPlugin
 		else if(ACTION_STOP_READING.equals(action))
 		{
 			stopConnectionManager(args, callbackCtx);
+		}
+		else if(ACTION_SET_DATA_CALLBACK.equals(action))
+		{
+			_ioCallback = callbackCtx;
+			return true;
 		}
 		else if(ACTION_WRITE.equals(action))
 		{
@@ -636,7 +647,7 @@ public class BluetoothPlugin extends CordovaPlugin
 	 */
 	private void startConnectionManager(JSONArray args, CallbackContext callbackCtx)
 	{
-		if(_ioCallback != null)
+		if(_connectionManagerActive)
 		{
 			this.error(callbackCtx, "There is already an active connection.", BluetoothError.ERR_CONNECTION_ALREADY_EXISTS);
 		}
@@ -650,11 +661,12 @@ public class BluetoothPlugin extends CordovaPlugin
 				}
 
 				_bluetooth.startConnectionManager();
-				_ioCallback = callbackCtx;
+				_connectionManagerActive = true;
+				callbackCtx.success();
 			}
 			catch(Exception e)
 			{
-				_ioCallback = null;
+				_connectionManagerActive = false;
 				this.error(callbackCtx, e.getMessage(), BluetoothError.ERR_UNKNOWN);
 			}
 		}
@@ -673,6 +685,7 @@ public class BluetoothPlugin extends CordovaPlugin
 			if(_bluetooth.isConnectionManaged())
 			{
 				_bluetooth.stopConnectionManager();
+				_connectionManagerActive = false;
 				callbackCtx.success();
 			}
 			else
@@ -984,12 +997,13 @@ public class BluetoothPlugin extends CordovaPlugin
 						_connectCallback = null;
 					}
 
-					if(_ioCallback != null)
+					if(_connectionManagerActive)
 					{
-						BluetoothPlugin.this.error(_ioCallback,
+						BluetoothPlugin.this.error(_connectCallback,
 							"Connection lost.", BluetoothError.ERR_CONNECTION_LOST
 						);
 						_ioCallback = null;
+						_connectionManagerActive = false;
 					}
 
 					break;
@@ -1004,12 +1018,12 @@ public class BluetoothPlugin extends CordovaPlugin
 						_connectCallback = null;
 					}
 
-					if(_ioCallback != null)
+					if(_connectionManagerActive)
 					{
 						BluetoothPlugin.this.error(_ioCallback,
 							"Disconnected.", BluetoothError.ERR_DISCONNECTED
 						);
-						_ioCallback = null;
+						_connectionManagerActive = false;
 					}
 
 					break;
@@ -1075,12 +1089,12 @@ public class BluetoothPlugin extends CordovaPlugin
 						_connectCallback = null;
 					}
 
-					if(_ioCallback != null)
+					if(_connectionManagerActive)
 					{
-						BluetoothPlugin.this.error(_ioCallback,
+						BluetoothPlugin.this.error(_connectCallback,
 							"Bluetooth lost.", BluetoothError.ERR_BLUETOOTH_LOST
 						);
-						_ioCallback = null;
+						_connectionManagerActive = false;
 					}
 
 					break;
